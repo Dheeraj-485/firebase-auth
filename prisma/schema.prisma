@@ -1,0 +1,77 @@
+
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+model User{
+  id           Int          @id     @default(autoincrement())
+  firebase_uid String   @unique
+  email        String   @unique 
+  password     String 
+  userProfile  Profile?
+  userAddresses addresses[]
+
+created_at     DateTime            @default(now())
+}
+
+
+model Profile{
+  id                 Int          @id   @default(autoincrement())
+  user_id            Int        @unique 
+  user               User        @relation(fields: [user_id], references: [id])
+  name               String
+  alternate_phone     String?    @db.VarChar(12)   
+  gender             Gender
+  is_eggetarian      Boolean
+  milk_preference    milkType
+  family_member_count Int
+  weight_kg           Decimal   @db.Decimal(5,2)
+
+  door_image_url     String?
+  created_at          DateTime  @default(now())
+
+
+}
+
+
+enum milkType {
+  Cow
+  Buffalo
+}
+enum Gender {
+  Male
+  Female
+  Others
+}
+
+
+
+
+model addresses{
+id               Int          @id   @default(autoincrement())
+
+user_id          Int          
+
+
+user             User        @relation(fields: [user_id],references: [id])
+
+address_line1   String?     @db.VarChar(100)
+address_line2    String?     @db.VarChar(100)
+city            String      @db.VarChar(30)
+state           String      @db.VarChar(30)
+pincode         String      @db.VarChar(30)
+landmark        String      @db.VarChar(30)
+is_default      Boolean    @default(true)
+created_at      DateTime  @default(now())
+}
+
+
+
+
