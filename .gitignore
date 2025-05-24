@@ -3,6 +3,9 @@
 /node_modules
 /build
 
+# Firebase secret
+src/firebase/firebase-service-account.json
+
 # Logs
 logs
 *.log
