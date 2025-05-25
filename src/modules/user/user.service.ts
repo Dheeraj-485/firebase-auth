@@ -12,6 +12,7 @@ import { PrismaService } from 'prisma/prisma.service';
 import admin from 'src/firebase/firebase.config';
 import { updateProfileDTO } from './dto/update-profile';
 import { userAddressDTO } from './dto/user-addresses';
+import { updateAddressDTO } from './dto/update-address.dto';
 
 @Injectable()
 export class UserService {
@@ -26,16 +27,16 @@ export class UserService {
       if (!decoded) {
         throw new UnauthorizedException('Unauthorized user');
       }
-      const User = await this.prisma.user.findUnique({
+      const user = await this.prisma.user.findUnique({
         where: { email: decoded.email },
       });
 
-      if (!User) {
+      if (!user) {
         throw new UnauthorizedException('User not found');
       }
 
       const existingProfile = await this.prisma.profile.findUnique({
-        where: { user_id: User.id },
+        where: { user_id: user.id },
       });
       if (existingProfile) {
         throw new ConflictException('Profile already created');
@@ -43,7 +44,7 @@ export class UserService {
 
       const profile = await this.prisma.profile.create({
         data: {
-          user_id: User.id,
+          user_id: user.id,
           ...createProfileDTO,
         },
       });
@@ -76,6 +77,7 @@ export class UserService {
         where: { email: verify.email },
         include: {
           userProfile: true,
+          userAddresses: true,
         },
       });
 
@@ -141,32 +143,175 @@ export class UserService {
 
   // For address api
   async createAddress(idToken: string, createAddressDTO: userAddressDTO) {
-    if (!idToken) {
-      throw new BadRequestException('Token not provided');
+    try {
+      if (!idToken) {
+        throw new BadRequestException('Token not provided');
+      }
+      console.log(idToken);
+
+      const decoded = await admin.auth().verifyIdToken(idToken);
+      if (!decoded) {
+        throw new UnauthorizedException('Unauthorized user');
+      }
+
+      //1get user from decoded
+
+      const user = await this.prisma.user.findUnique({
+        where: { email: decoded.email },
+        include: { userAddresses: true },
+      });
+
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
+
+      //2Now create address of that user
+
+      const newAddress = await this.prisma.addresses.create({
+        data: {
+          user_id: user.id,
+          ...createAddressDTO,
+        },
+      });
+      return {
+        message: 'Address created successfully',
+        address: newAddress,
+      };
+    } catch (error) {
+      console.error('Unexpected error:', error);
+      throw new InternalServerErrorException(
+        `Failed to create address: ${error?.message}`,
+      );
     }
-    const decoded = await admin.auth().verifyIdToken(idToken);
-    if (!decoded) {
-      throw new UnauthorizedException('Unauthorized user');
+  }
+
+  async getAddress(idToken: string) {
+    try {
+      if (!idToken) {
+        throw new NotFoundException('Token not found');
+      }
+
+      const decoded = await admin.auth().verifyIdToken(idToken);
+      if (!decoded) {
+        throw new UnauthorizedException('Unauthorized user ');
+      }
+      const user = await this.prisma.user.findUnique({
+        where: { email: decoded.email },
+      });
+      if (!user) {
+        throw new NotFoundException('user not found');
+      }
+
+      const getAddress = await this.prisma.addresses.findMany({
+        where: {
+          user_id: user?.id,
+        },
+      });
+
+      return {
+        message: 'User address fetched',
+        getAddress,
+      };
+    } catch (error) {
+      throw new InternalServerErrorException(
+        `Failed to get Address: ${error?.message}`,
+      );
     }
+  }
 
-    //1get user from decoded
+  async updateAddress(
+    idToken: string,
+    addressId: number,
+    updateAddressDTO: updateAddressDTO,
+  ) {
+    try {
+      if (!idToken) {
+        throw new NotFoundException('Token is required');
+      }
 
-    const user = await this.prisma.user.findUnique({
-      where: { email: decoded.email },
-      include: { userAddresses: true },
-    });
+      const decoded = await admin.auth().verifyIdToken(idToken);
+      if (!decoded) {
+        throw new UnauthorizedException('Unauthorized user');
+      }
 
-    if (!user) {
-      throw new UnauthorizedException('User not found');
+      // 1 get user,
+
+      const user = await this.prisma.user.findUnique({
+        where: { email: decoded.email },
+      });
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+      //2. Address update
+      // find address
+
+      // Verify address belongs to user
+      const address = await this.prisma.addresses.findUnique({
+        where: { id: addressId },
+      });
+
+      if (!address || address.user_id !== user.id) {
+        throw new NotFoundException('Address not found or unauthorized');
+      }
+      const updatedAddress = await this.prisma.addresses.update({
+        where: {
+          id: addressId,
+        },
+        data: {
+          ...updateAddressDTO,
+        },
+      });
+      return {
+        message: 'Address updated successfully',
+        address: updatedAddress,
+      };
+    } catch (error) {
+      console.error('Error updating address:', error);
+      throw new InternalServerErrorException(
+        `Failed to update address: ${error?.message}`,
+      );
     }
+  }
 
-    //2Now create address of that user
+  async deleteAddress(idToken: string, addressId: number) {
+    try {
+      if (!idToken) {
+        throw new BadRequestException('Token is required');
+      }
 
-    const address = await this.prisma.addresses.create({
-      data: {
-        user_id: user.id,
-        ...createAddressDTO,
-      },
-    });
+      const decoded = await admin.auth().verifyIdToken(idToken);
+      if (!decoded) {
+        throw new UnauthorizedException('Unauthorized user');
+      }
+
+      const user = await this.prisma.user.findUnique({
+        where: { email: decoded.email },
+      });
+
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      const address = await this.prisma.addresses.findUnique({
+        where: { id: addressId },
+      });
+
+      if (!address || address.user_id !== user.id) {
+        throw new NotFoundException('Address not found or unauthorized');
+      }
+
+      await this.prisma.addresses.delete({
+        where: { id: addressId },
+      });
+
+      return {
+        message: 'Address deleted successfully',
+      };
+    } catch (error) {
+      console.error('Error deleting address:', error);
+      throw new InternalServerErrorException(
+        `Failed to delete address: ${error?.message}`,
+      );
+    }
   }
 }

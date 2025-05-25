@@ -9,7 +9,7 @@ import {
   MaxLength,
 } from 'class-validator';
 
-export class userAddressDTO {
+export class updateAddressDTO {
   @IsOptional()
   @IsString()
   @MaxLength(100)
@@ -20,21 +20,22 @@ export class userAddressDTO {
   @MaxLength(100)
   address_line2: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
   @MaxLength(30)
   city: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
   @MaxLength(30)
   state: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
   @MaxLength(30)
   pincode: string;
 
+  @IsOptional()
   @IsString()
   @MaxLength(50)
   landmark: string;
