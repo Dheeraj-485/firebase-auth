@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { LoginDto } from './dto/login-auth.dto';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Role } from '@prisma/client';
 import admin from 'src/firebase/firebase.config';
 import axios from 'axios';
 import { PrismaService } from 'prisma/prisma.service';
@@ -17,7 +17,7 @@ export class AuthService {
   private firebaseApiKey = process.env.FIREBASE_API_KEY;
 
   async signup(createAuthDto: CreateAuthDto) {
-    const { email, password } = createAuthDto;
+    const { email, password, role } = createAuthDto;
 
     try {
       const findEmail = await this.prisma.user.findUnique({ where: { email } });
@@ -35,7 +35,8 @@ export class AuthService {
       const user = await this.prisma.user.create({
         data: {
           email,
-          password,
+          password: 'firebase_will_handle',
+          role: role || Role.USER,
           firebase_uid: createFirebaseUser.uid,
         },
       });
@@ -103,48 +104,4 @@ export class AuthService {
     try {
     } catch (error) {}
   }
-
-  // async login(loginDto: LoginDto) {
-  //   const { email, password } = loginDto;
-
-  //   const user = await this.prisma.user.findFirst({ where: { email } });
-  //   if (!user) {
-  //     throw new ConflictException('Email not found');
-  //   }
-
-  //   if (!this.firebaseApiKey) {
-  //     throw new InternalServerErrorException(
-  //       'Firebase API key is not configured',
-  //     );
-  //   }
-
-  //   try {
-  //     const passwordValid = await bcrypt.compare(password, user.password);
-  //     if (!passwordValid) {
-  //       throw new UnauthorizedException('Invalid credentials');
-  //     }
-  //     const response = await axios.post(
-  //       `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${this.firebaseApiKey}`,
-  //       {
-  //         email,
-  //         password,
-  //         returnSecureToken: true,
-  //       },
-  //     );
-
-  //     return {
-  //       message: 'Login successful',
-  //       idToken: response.data.idToken,
-  //       refreshToken: response.data.refreshToken,
-  //       expiresIn: response.data.expiresIn,
-  //       uid: response.data.localId,
-  //     };
-  //   } catch (error) {
-  //     const msg = error.response?.data?.error?.message;
-  //     if (msg === 'EMAIL_NOT_FOUND' || msg === 'INVALID_PASSWORD') {
-  //       throw new UnauthorizedException('Invalid email or password');
-  //     }
-  //     throw new InternalServerErrorException('Login failed: ' + msg);
-  //   }
-  // }
 }

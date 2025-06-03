@@ -61,6 +61,27 @@ export class UserService {
     }
   }
 
+  async getAllUsers() {
+    return this.prisma.user.findMany();
+  }
+
+  async deleteUser(id: number) {
+    try {
+      const user = await this.prisma.user.findUnique({ where: { id } });
+      if (!user) throw new NotFoundException('User not found');
+
+      const deletedUser = this.prisma.user.delete({ where: { id } });
+      return {
+        message: 'User deleted Successfully',
+        deletedUser,
+      };
+    } catch (error) {
+      throw new InternalServerErrorException(
+        `Failed to delete User: ${error?.message}`,
+      );
+    }
+  }
+
   async userProfile(idToken: string) {
     try {
       // const { idToken } =
