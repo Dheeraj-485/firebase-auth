@@ -17,6 +17,24 @@ enum Role {
   
 }
 
+
+model Permission{
+  id      Int   @id   @default(autoincrement())
+
+  action  String      
+  resource String     
+  roles    RolePermission[]
+  created_at DateTime  @default(now())
+
+  
+}
+model RolePermission {
+  id           Int      @id    @default(autoincrement())
+  role         Role
+  permissionId  Int
+  permission    Permission     @relation(fields: [permissionId], references: [id])
+}
+
 model User{
   id           Int          @id     @default(autoincrement())
   firebase_uid String   @unique

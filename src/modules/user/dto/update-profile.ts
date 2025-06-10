@@ -1,8 +1,6 @@
-import { CreateUserProfileDto } from './user-profile';
 import {
   IsEnum,
   IsInt,
-  IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,

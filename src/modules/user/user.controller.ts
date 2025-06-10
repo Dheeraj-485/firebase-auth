@@ -3,7 +3,6 @@ import {
   Get,
   Post,
   Body,
-  Patch,
   Param,
   Delete,
   Headers,
@@ -20,14 +19,19 @@ import { updateAddressDTO } from './dto/update-address.dto';
 import { Role } from '@prisma/client';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { RolesGuard } from 'src/common/guards/roles.guard';
+import { AbacAction } from 'src/common/decorators/abac.decorator';
+import { AbacGuard } from 'src/common/guards/abac.guard';
+import { AbacActionEnum } from 'src/common/services/action.enum';
 
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Get('getUsers')
-  @Roles(Role.ADMIN)
-  @UseGuards(RolesGuard)
+  // @Roles(Role.ADMIN)
+  // @UseGuards(RolesGuard)
+  @AbacAction(AbacActionEnum.GET_USERS)
+  @UseGuards(AbacGuard)
   getUsers(@Req() req) {
     const user = req.user;
     console.log(user);
@@ -51,13 +55,17 @@ export class UserController {
   }
 
   @Get('me')
-  @Roles(Role.USER)
-  @UseGuards(RolesGuard)
+  // @Roles(Role.USER)
+  // @UseGuards(RolesGuard)
+  @AbacAction(AbacActionEnum.GET_PROFILE)
+  @UseGuards(AbacGuard)
   GetUser(@Headers('idToken') idToken: string) {
     return this.userService.userProfile(idToken);
   }
 
   @Put('update')
+  @AbacAction(AbacActionEnum.UPDATE_PROFILE)
+  @UseGuards(AbacGuard)
   updateUser(
     @Headers('idToken') idToken: string,
     @Body() updateProfileDTO: updateProfileDTO,

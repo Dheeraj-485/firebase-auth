@@ -1,13 +1,4 @@
-import {
-  IsBoolean,
-  isBoolean,
-  isNotEmpty,
-  IsNotEmpty,
-  IsOptional,
-  isString,
-  IsString,
-  MaxLength,
-} from 'class-validator';
+import { IsBoolean, IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class updateAddressDTO {
   @IsOptional()

@@ -6,11 +6,10 @@ import {
 } from '@nestjs/common';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { LoginDto } from './dto/login-auth.dto';
-import { PrismaClient, Role } from '@prisma/client';
+import { Role } from '@prisma/client';
 import admin from 'src/firebase/firebase.config';
 import axios from 'axios';
 import { PrismaService } from 'prisma/prisma.service';
-import bcrypt from 'bcryptjs';
 @Injectable()
 export class AuthService {
   constructor(private prisma: PrismaService) {}
@@ -41,6 +40,7 @@ export class AuthService {
         },
       });
 
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { password: removed, ...safeUser } = user;
       return {
         message: 'User created successfully',
@@ -98,10 +98,5 @@ export class AuthService {
       );
       throw new UnauthorizedException('Invalid credentials');
     }
-  }
-
-  async createUserProfile() {
-    try {
-    } catch (error) {}
   }
 }
